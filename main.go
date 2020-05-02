@@ -13,7 +13,6 @@ import (
     "os"
 )
 
-
 func main() {
 
     var rtrInt string
@@ -31,12 +30,11 @@ func main() {
     }
     flag.Parse()
 
-    //if syslog_enable {
-    //    fmt.Println("syslog logging is enabled")
-    //}
-    logwriter, _ := syslog.New(syslog.LOG_INFO, "eap-proxy")
-    log.SetOutput(logwriter)
-    log.SetFlags(0) //removes timestamps
+    if syslog_enable {
+        logwriter, _ := syslog.New(syslog.LOG_INFO, "eap-proxy")
+        log.SetOutput(logwriter)
+        log.SetFlags(0) //removes timestamps
+    }
 
     proxyEap(rtrInt, wanInt)
 }
@@ -128,17 +126,17 @@ func printPacketInfo(src string, dst string, packet gopacket.Packet) {
     ethernetPacket, _ := ethernetLayer.(*layers.Ethernet)
     eapol, _ := eapolLayer.(*layers.EAPOL)
 
-    fmt.Printf("%s: ", src)
-    fmt.Printf("%s > %s, %s v%d, len %d", ethernetPacket.SrcMAC, ethernetPacket.DstMAC, eapol.Type, eapol.Version, eapol.Length)
+    line := fmt.Sprintf("%s: ", src)
+    line += fmt.Sprintf("%s > %s, %s v%d, len %d", ethernetPacket.SrcMAC, ethernetPacket.DstMAC, eapol.Type, eapol.Version, eapol.Length)
 
     if eapLayer != nil {
         eap, _ := eapLayer.(*layers.EAP)
         codeString := EAPTypeString(eap.Code)
-        fmt.Printf(", %s (%d) id %d", codeString, eap.Code, eap.Id)
+        line += fmt.Sprintf(", %s (%d) id %d", codeString, eap.Code, eap.Id)
     }
 
-    fmt.Printf(" > %s", dst)
-    fmt.Println()
+    line += fmt.Sprintf(" > %s", dst)
+    log.Println(line)
 }
 
 func EAPTypeString(code layers.EAPCode) string {
