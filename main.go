@@ -40,6 +40,16 @@ func main() {
         log.SetFlags(0) //removes timestamps
     }
 
+
+    // Allow only single instance of goeap_proxy
+    // We could potentially tie the lock file to the wan and rtr interfaces
+    // But lets keep things simple for now
+    l, err := net.Listen("unix", "/var/run/goeap_proxy.sock")
+        if err != nil {
+        log.Fatal("goeap_proxy is already running!")
+    }
+    defer l.Close()
+
     proxyEap(rtrInt, wanInt, promiscuous)
 }
 
