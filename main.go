@@ -35,7 +35,7 @@ func main() {
     flag.Parse()
 
     if syslog_enable {
-        logwriter, _ := syslog.New(syslog.LOG_INFO, "goeap-proxy")
+        logwriter, _ := syslog.New(syslog.LOG_INFO, "goeap_proxy")
         log.SetOutput(logwriter)
         log.SetFlags(0) //removes timestamps
     }
