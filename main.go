@@ -44,7 +44,7 @@ func main() {
     // Allow only single instance of goeap_proxy
     // We could potentially tie the lock file to the wan and rtr interfaces
     // But lets keep things simple for now
-    l, err := net.Listen("unix", "/var/run/goeap_proxy.sock")
+    l, err := net.Listen("unix", "@/run/goeap_proxy.lock")
         if err != nil {
         log.Fatal("goeap_proxy is already running!")
     }
