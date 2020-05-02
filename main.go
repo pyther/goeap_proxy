@@ -31,11 +31,12 @@ func main() {
     }
     flag.Parse()
 
-    if syslog_enable {
-        logwriter, _ := syslog.New(syslog.LOG_INFO, "eap-proxy")
-        log.SetOutput(logwriter)
-        log.SetFlags(0) //removes timestamps
-    }
+    //if syslog_enable {
+    //    fmt.Println("syslog logging is enabled")
+    //}
+    logwriter, _ := syslog.New(syslog.LOG_INFO, "eap-proxy")
+    log.SetOutput(logwriter)
+    log.SetFlags(0) //removes timestamps
 
     proxyEap(rtrInt, wanInt)
 }
