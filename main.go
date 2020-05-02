@@ -13,15 +13,19 @@ import (
     "os"
 )
 
+var EAP_MULTICAST_ADDR string = "01:80:c2:00:00:03"
+
 func main() {
 
     var rtrInt string
     var wanInt string
     var syslog_enable bool
+    var promiscuous bool
 
     flag.StringVar(&rtrInt, "if-router", "", "interface of the AT&T ONT/WAN")
     flag.StringVar(&wanInt, "if-wan", "", "interface of the AT&T Router")
     flag.BoolVar(&syslog_enable, "syslog", false, "log to syslog")
+    flag.BoolVar(&promiscuous, "promiscuous", false, "place interfaces into promiscuous mode instead of multicast")
     flag.Parse()
 
     if rtrInt == "" || wanInt == "" {
@@ -36,10 +40,10 @@ func main() {
         log.SetFlags(0) //removes timestamps
     }
 
-    proxyEap(rtrInt, wanInt)
+    proxyEap(rtrInt, wanInt, promiscuous)
 }
 
-func proxyEap(rtrInt string, wanInt string) {
+func proxyEap(rtrInt string, wanInt string, promiscuous bool) {
     // get interface objects
     wanIf, err := net.InterfaceByName(wanInt)
     if err != nil {
@@ -51,20 +55,30 @@ func proxyEap(rtrInt string, wanInt string) {
         log.Fatalf("interface by name %s: %v", rtrInt, err)
     }
 
+
     // Listen on Interfaces
     wanConn, err := raw.ListenPacket(wanIf, uint16(layers.EthernetTypeEAPOL), nil)
     if err != nil {
         log.Fatalf("failed to listen: %v", err)
     }
-    wanConn.SetPromiscuous(true)
     defer wanConn.Close()
 
     rtrConn, err := raw.ListenPacket(rtrIf, uint16(layers.EthernetTypeEAPOL), nil)
     if err != nil {
         log.Fatalf("failed to listen: %v", err)
     }
-    rtrConn.SetPromiscuous(true)
     defer rtrConn.Close()
+
+    // Listen to Multicast Address or put interfaces in promiscuous mode
+    if promiscuous {
+        wanConn.SetPromiscuous(true)
+        rtrConn.SetPromiscuous(true)
+    } else {
+        eapAddr, _ := net.ParseMAC(EAP_MULTICAST_ADDR)
+        eapMulticastAddr := &raw.Addr{HardwareAddr: eapAddr}
+        wanConn.SetMulticast(eapMulticastAddr)
+        rtrConn.SetMulticast(eapMulticastAddr)
+    }
 
     // Wait until both subroutines exit
     quit := make(chan int)
