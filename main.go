@@ -116,13 +116,12 @@ func proxyPackets(srcName string, srcConn *raw.Conn, dstName string, dstConn *ra
 		// print a log message with useful information
 		printPacketInfo(srcName, dstName, packet)
 
-		// Get the Source Addr of the Ethernet Frame
-		ethernetLayer := packet.Layer(layers.LayerTypeEthernet)
-		ethernetPacket, _ := ethernetLayer.(*layers.Ethernet)
-		srcAddr := &raw.Addr{HardwareAddr: ethernetPacket.SrcMAC}
+		// write packet to the destination interface
+		_, err = dstConn.WriteTo(packet.Data(), nil)
 
-		// Transmit the Packet to the destination interface
-		_, err = dstConn.WriteTo(packet.Data(), srcAddr)
+		if err != nil {
+			log.Printf("unexpected write error: %v\n", err)
+		}
 	}
 
 }

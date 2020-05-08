@@ -8,7 +8,7 @@ require (
 )
 
 // https://github.com/mdlayher/raw/pull/64
-replace github.com/mdlayher/raw => github.com/pyther/raw v0.0.0-20200502183207-0656fbd00b1d
+replace github.com/mdlayher/raw => github.com/pyther/raw v0.0.0-20200508193324-eb26248ef18b
 
 // https://github.com/google/gopacket/pull/781
 replace github.com/google/gopacket => github.com/pyther/gopacket v1.1.18-0.20200502044149-9afa69325031
