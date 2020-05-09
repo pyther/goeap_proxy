@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+var Version string
+var BuildStamp string
 var EAP_MULTICAST_ADDR string = "01:80:c2:00:00:03"
 
 func main() {
@@ -21,12 +23,21 @@ func main() {
 	var wanInt string
 	var syslog_enable bool
 	var promiscuous bool
+	var version bool
 
 	flag.StringVar(&rtrInt, "if-router", "", "interface of the AT&T ONT/WAN")
 	flag.StringVar(&wanInt, "if-wan", "", "interface of the AT&T Router")
 	flag.BoolVar(&syslog_enable, "syslog", false, "log to syslog")
 	flag.BoolVar(&promiscuous, "promiscuous", false, "place interfaces into promiscuous mode instead of multicast")
+	flag.BoolVar(&version, "version", false, "display version")
 	flag.Parse()
+
+	if version {
+		fmt.Println("Version: ", Version)
+		fmt.Println("Build Time: ", BuildStamp)
+		os.Exit(0)
+	}
+
 
 	if rtrInt == "" || wanInt == "" {
 		flag.PrintDefaults()
