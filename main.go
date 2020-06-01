@@ -25,8 +25,8 @@ func main() {
 	var promiscuous bool
 	var version bool
 
-	flag.StringVar(&rtrInt, "if-router", "", "interface of the AT&T ONT/WAN")
-	flag.StringVar(&wanInt, "if-wan", "", "interface of the AT&T Router")
+	flag.StringVar(&rtrInt, "if-router", "", "interface of the AT&T Router")
+	flag.StringVar(&wanInt, "if-wan", "", "interface of the AT&T ONT/WAN")
 	flag.BoolVar(&syslog_enable, "syslog", false, "log to syslog")
 	flag.BoolVar(&promiscuous, "promiscuous", false, "place interfaces into promiscuous mode instead of multicast")
 	flag.BoolVar(&version, "version", false, "display version")
@@ -37,7 +37,6 @@ func main() {
 		fmt.Println("Build Time: ", BuildStamp)
 		os.Exit(0)
 	}
-
 
 	if rtrInt == "" || wanInt == "" {
 		flag.PrintDefaults()
@@ -67,24 +66,24 @@ func proxyEap(rtrInt string, wanInt string, promiscuous bool) {
 	// get interface objects
 	wanIf, err := net.InterfaceByName(wanInt)
 	if err != nil {
-		log.Fatalf("interface by name %s: %v", wanInt, err)
+		log.Fatalf("InterfaceByName(%q) failed: %v", wanInt, err)
 	}
 
 	rtrIf, err := net.InterfaceByName(rtrInt)
 	if err != nil {
-		log.Fatalf("interface by name %s: %v", rtrInt, err)
+		log.Fatalf("InterfaceByName(%q) failed: %v", rtrInt, err)
 	}
 
 	// Listen on Interfaces
 	wanConn, err := raw.ListenPacket(wanIf, uint16(layers.EthernetTypeEAPOL), nil)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Fatalf("ListenPacket(%q) failed: %v", wanIf, err)
 	}
 	defer wanConn.Close()
 
 	rtrConn, err := raw.ListenPacket(rtrIf, uint16(layers.EthernetTypeEAPOL), nil)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Fatalf("ListenPacket(%q) failed: %v", rtrIf, err)
 	}
 	defer rtrConn.Close()
 
@@ -100,6 +99,7 @@ func proxyEap(rtrInt string, wanInt string, promiscuous bool) {
 	}
 
 	// Wait until both subroutines exit
+	log.Printf("proxy started. router: %s, wan: %s\n", rtrInt, wanInt)
 	quit := make(chan int)
 	go proxyPackets(rtrInt, rtrConn, wanInt, wanConn)
 	go proxyPackets(wanInt, wanConn, rtrInt, rtrConn)
@@ -112,7 +112,7 @@ func proxyPackets(srcName string, srcConn *raw.Conn, dstName string, dstConn *ra
 	for {
 		size, _, err := srcConn.ReadFrom(recvBuf)
 		if err != nil {
-			log.Printf("unexpected read error: %v\n", err)
+			log.Printf("%s: unexpected read error: %v\n", srcName, err)
 			// maybe not necessary, give the system a minute to recover
 			time.Sleep(500 * time.Millisecond)
 			continue
@@ -131,7 +131,7 @@ func proxyPackets(srcName string, srcConn *raw.Conn, dstName string, dstConn *ra
 		_, err = dstConn.WriteTo(packet.Data(), nil)
 
 		if err != nil {
-			log.Printf("unexpected write error: %v\n", err)
+			log.Printf("%s: unexpected write error: %v\n", dstName, err)
 		}
 	}
 
