@@ -157,7 +157,7 @@ func printPacketInfo(src string, dst string, packet gopacket.Packet) {
 
 	if eapLayer != nil {
 		eap, _ := eapLayer.(*layers.EAP)
-		codeString := EAPTypeString(eap.Code)
+		codeString := EAPCodeToString(eap.Code)
 		line += fmt.Sprintf(", %s (%d) id %d", codeString, eap.Code, eap.Id)
 	}
 
@@ -165,15 +165,15 @@ func printPacketInfo(src string, dst string, packet gopacket.Packet) {
 	fmt.Println(line)
 }
 
-func EAPTypeString(code layers.EAPCode) string {
+func EAPCodeToString(code layers.EAPCode) string {
 	switch code {
-	case 1:
+	case layers.EAPCodeRequest:
 		return "Request"
-	case 2:
+	case layers.EAPCodeResponse:
 		return "Response"
-	case 3:
+	case layers.EAPCodeSuccess:
 		return "Success"
-	case 4:
+	case layers.EAPCodeFailure:
 		return "Failure"
 	}
 	return "Unknown"
