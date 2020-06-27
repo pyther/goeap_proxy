@@ -15,6 +15,39 @@ var Version string
 var BuildStamp string
 var EAP_MULTICAST_ADDR string = "01:80:c2:00:00:03"
 
+type eapInterface struct {
+	name string
+	conn *raw.Conn
+}
+
+func newInterface(name string, promiscuous bool) *eapInterface {
+	x := eapInterface{name: name}
+
+	intf, err := net.InterfaceByName(name)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "InterfaceByName(%q) failed: %v\n", name, err)
+		os.Exit(1)
+	}
+
+	conn, err := raw.ListenPacket(intf, uint16(layers.EthernetTypeEAPOL), nil)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ListenPacket(%q) failed: %v\n", name, err)
+		os.Exit(1)
+	}
+
+	// Listen to Multicast Address or put interfaces in promiscuous mode
+	if promiscuous {
+		conn.SetPromiscuous(true)
+	} else {
+		eapAddr, _ := net.ParseMAC(EAP_MULTICAST_ADDR)
+		eapMulticastAddr := &raw.Addr{HardwareAddr: eapAddr}
+		conn.SetMulticast(eapMulticastAddr)
+	}
+
+	x.conn = conn
+	return &x
+}
+
 func main() {
 
 	var rtrInt string
@@ -50,113 +83,65 @@ func main() {
 	}
 	defer l.Close()
 
-	proxyEap(rtrInt, wanInt, promiscuous)
-}
-
-func proxyEap(rtrInt string, wanInt string, promiscuous bool) {
-	// get interface objects
-	wanIf, err := net.InterfaceByName(wanInt)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "InterfaceByName(%q) failed: %v\n", wanInt, err)
-		os.Exit(1)
-	}
-
-	rtrIf, err := net.InterfaceByName(rtrInt)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "InterfaceByName(%q) failed: %v\n", rtrInt, err)
-		os.Exit(1)
-	}
-
-	// Listen on Interfaces
-	wanConn, err := raw.ListenPacket(wanIf, uint16(layers.EthernetTypeEAPOL), nil)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "ListenPacket(%q) failed: %v\n", wanIf, err)
-		os.Exit(1)
-	}
-	defer wanConn.Close()
-
-	rtrConn, err := raw.ListenPacket(rtrIf, uint16(layers.EthernetTypeEAPOL), nil)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "ListenPacket(%q) failed: %v\n", rtrIf, err)
-		os.Exit(1)
-	}
-	defer rtrConn.Close()
-
-	// Listen to Multicast Address or put interfaces in promiscuous mode
-	if promiscuous {
-		wanConn.SetPromiscuous(true)
-		rtrConn.SetPromiscuous(true)
-	} else {
-		eapAddr, _ := net.ParseMAC(EAP_MULTICAST_ADDR)
-		eapMulticastAddr := &raw.Addr{HardwareAddr: eapAddr}
-		wanConn.SetMulticast(eapMulticastAddr)
-		rtrConn.SetMulticast(eapMulticastAddr)
-	}
+	wan := newInterface(wanInt, promiscuous)
+	rtr := newInterface(rtrInt, promiscuous)
 
 	// Wait until both subroutines exit
 	fmt.Printf("proxy started. router: %s, wan: %s\n", rtrInt, wanInt)
 	quit := make(chan int)
-	go proxyPackets(rtrInt, rtrConn, wanInt, wanConn)
-	go proxyPackets(wanInt, wanConn, rtrInt, rtrConn)
+	go proxyPackets(rtr, wan)
+	go proxyPackets(wan, rtr)
 	<-quit
 }
 
-func proxyPackets(srcName string, srcConn *raw.Conn, dstName string, dstConn *raw.Conn) {
+func proxyPackets(src *eapInterface, dst *eapInterface) {
 	// This might break for jumbo frames
 	recvBuf := make([]byte, 1500)
 	for {
-		size, _, err := srcConn.ReadFrom(recvBuf)
+		size, _, err := src.conn.ReadFrom(recvBuf)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: unexpected read error: %v\n", srcName, err)
+			fmt.Fprintf(os.Stderr, "%s: unexpected read error: %v\n", src.name, err)
 			// maybe not necessary, give the system a minute to recover
 			time.Sleep(500 * time.Millisecond)
 			continue
 		}
+		packetData := recvBuf[:size]
 
-		// returns Nil if not an Ethernet AND EAPOL packet
-		packet := parsePacket(recvBuf[:size])
-		if packet == nil {
+		var eth layers.Ethernet
+		var eapol layers.EAPOL
+		var eap layers.EAP
+		parser := gopacket.NewDecodingLayerParser(layers.LayerTypeEthernet, &eth, &eapol, &eap)
+		decoded := []gopacket.LayerType{}
+
+		// Raw socket only listes for EAPoL Packet
+		// This error should be sufficient error handling
+		if err := parser.DecodeLayers(packetData, &decoded); err != nil {
+			fmt.Fprintf(os.Stderr, "%s: could not decode layers: %v\n", src.name, err)
 			continue
 		}
 
+			continue
+		}
+
+		//DEBUG: Print Decoded Layers
+		//fmt.Fprintf(os.Stderr, "Decoded: %v\n", decoded)
+
 		// print a log message with useful information
-		printPacketInfo(srcName, dstName, packet)
+		printPacketInfo(src.name, dst.name, eth, eapol, eap)
 
-		// write packet to the destination interface
-		_, err = dstConn.WriteTo(packet.Data(), nil)
-
+		_, err = dst.conn.WriteTo(packetData, nil)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: unexpected write error: %v\n", dstName, err)
+			fmt.Fprintf(os.Stderr, "%s: unexpected write error: %v\n", dst.name, err)
 		}
 	}
 
 }
 
-func parsePacket(data []byte) gopacket.Packet {
-	packet := gopacket.NewPacket(data, layers.LayerTypeEthernet, gopacket.Default)
-	eapolLayer := packet.Layer(layers.LayerTypeEAPOL)
-
-	if eapolLayer == nil {
-		fmt.Println("Not an EAPOL Packet")
-		return nil
-	}
-	return packet
-}
-
-func printPacketInfo(src string, dst string, packet gopacket.Packet) {
-	ethernetLayer := packet.Layer(layers.LayerTypeEthernet)
-	eapLayer := packet.Layer(layers.LayerTypeEAP)
-	eapolLayer := packet.Layer(layers.LayerTypeEAPOL)
-
-	// We've verified that we have valid packets in parsePacket
-	ethernetPacket, _ := ethernetLayer.(*layers.Ethernet)
-	eapol, _ := eapolLayer.(*layers.EAPOL)
-
+func printPacketInfo(src string, dst string, eth layers.Ethernet, eapol layers.EAPOL, eap layers.EAP) {
 	line := fmt.Sprintf("%s: ", src)
-	line += fmt.Sprintf("%s > %s, %s v%d, len %d", ethernetPacket.SrcMAC, ethernetPacket.DstMAC, eapol.Type, eapol.Version, eapol.Length)
+	line += fmt.Sprintf("%s > %s, %s v%d, len %d", eth.SrcMAC, eth.DstMAC, eapol.Type, eapol.Version, eapol.Length)
 
-	if eapLayer != nil {
-		eap, _ := eapLayer.(*layers.EAP)
+	if eap.Code != 0 {
 		codeString := EAPCodeToString(eap.Code)
 		line += fmt.Sprintf(", %s (%d) id %d", codeString, eap.Code, eap.Id)
 	}
