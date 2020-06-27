@@ -19,11 +19,16 @@ Usage of goeap_proxy:
     	interface of the AT&T ONT/WAN
   -if-wan string
     	interface of the AT&T Router
+  -ignore-logoff
+        ignore EAP-Logoff packets
   -promiscuous
     	place interfaces into promiscuous mode instead of multicast
   -syslog
     	log to syslog
 ```
+
+### Ignore Logoff
+It has been reported that some gateways such as the Pace 5268ac will send a EAPOLLogOff causing a sporadic outage. Use the `-ignore-logoff` flag if you encounter this issue. This is not needed for the BGW210. 
 
 ### Example Run
 ```
@@ -46,12 +51,11 @@ $ go build -o goeap_proxy main.go
 ```
 $ CC=/usr/local/bin/musl-gcc go build -o goeap_proxy main.go
 ```
-Note: This is useful for testing changes on router distributions that use musl without needing to go through the package process.
+Note: This is useful for testing changes on router distributions that use musl without needing to go through the packaging process.
+
 **For OpenWRT**
-
-Custom feed: [pyther/openwrt-feed](https://github.com/pyther/openwrt-feed)
-
-README contains insructions
+Openwrt feed: [pyther/openwrt-feed](https://github.com/pyther/openwrt-feed)
+Package building instructions in README
 
 ## Other Projects
 - [jaysoffian/eap_proxy](https://github.com/jaysoffian/eap_proxy): python implementation with a primary focus on EdgeOS
