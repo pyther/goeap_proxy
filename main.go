@@ -53,10 +53,12 @@ func main() {
 	var rtrInt string
 	var wanInt string
 	var promiscuous bool
+	var ignoreLogoff bool
 	var version bool
 
 	flag.StringVar(&rtrInt, "if-router", "", "interface of the AT&T Router")
 	flag.StringVar(&wanInt, "if-wan", "", "interface of the AT&T ONT/WAN")
+	flag.BoolVar(&ignoreLogoff, "ignore-logoff", false, "ignore EAPOL-Logoff packets")
 	flag.BoolVar(&promiscuous, "promiscuous", false, "place interfaces into promiscuous mode instead of multicast")
 	flag.BoolVar(&version, "version", false, "display version")
 	flag.Parse()
@@ -89,12 +91,12 @@ func main() {
 	// Wait until both subroutines exit
 	fmt.Printf("proxy started. router: %s, wan: %s\n", rtrInt, wanInt)
 	quit := make(chan int)
-	go proxyPackets(rtr, wan)
-	go proxyPackets(wan, rtr)
+	go proxyPackets(rtr, wan, ignoreLogoff)
+	go proxyPackets(wan, rtr, ignoreLogoff)
 	<-quit
 }
 
-func proxyPackets(src *eapInterface, dst *eapInterface) {
+func proxyPackets(src *eapInterface, dst *eapInterface, ignoreLogoff bool) {
 	// This might break for jumbo frames
 	recvBuf := make([]byte, 1500)
 	for {
@@ -120,6 +122,8 @@ func proxyPackets(src *eapInterface, dst *eapInterface) {
 			continue
 		}
 
+		if ignoreLogoff && eapol.Type == layers.EAPOLTypeLogOff {
+			fmt.Printf("%s: ignoring %s\n", src.name, eapol.Type)
 			continue
 		}
 
