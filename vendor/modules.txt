@@ -1,0 +1,9 @@
+# github.com/google/gopacket v1.1.17 => github.com/pyther/gopacket v1.1.18-0.20200502044149-9afa69325031
+github.com/google/gopacket
+github.com/google/gopacket/layers
+# github.com/mdlayher/raw v0.0.0-20191009151244-50f2db8cc065 => github.com/pyther/raw v0.0.0-20200508193324-eb26248ef18b
+github.com/mdlayher/raw
+# golang.org/x/net v0.0.0-20190419010253-1f3472d942ba
+golang.org/x/net/bpf
+# golang.org/x/sys v0.0.0-20190418153312-f0ce4c0180be
+golang.org/x/sys/unix
