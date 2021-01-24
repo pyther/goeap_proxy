@@ -23,8 +23,6 @@ Usage of goeap_proxy:
         ignore EAP-Logoff packets
   -promiscuous
     	place interfaces into promiscuous mode instead of multicast
-  -syslog
-    	log to syslog
 ```
 
 ### Ignore Logoff
@@ -42,20 +40,42 @@ root@OpenWrt:~# goeap_proxy -if-router eth3 -if-wan eth2
 ```
 
 ## Build
-**Standard Build**
+### Standard Build
 ```
 $ go build -o goeap_proxy main.go
 ```
 
-**Against Musl**
+### Against Musl
 ```
 $ CC=/usr/local/bin/musl-gcc go build -o goeap_proxy main.go
 ```
 Note: This is useful for testing changes on router distributions that use musl without needing to go through the packaging process.
 
-**For OpenWRT**
+### For OpenWRT
 Openwrt feed: [pyther/openwrt-feed](https://github.com/pyther/openwrt-feed)
 Package building instructions in README
+
+### For Fedora/RHEL/CentOS
+#### Build RPM
+```
+git archive --format=tar --prefix=goeap_proxy-0.2.0/ -o goeap_proxy-0.2.0.tar HEAD
+gzip goeap_proxy-0.2.0.tar
+mv geap_proxy-0.2.0.tar.gz ~/rpmbuild/SOURCES
+rpmbuild -ba goeap_proxy.spec
+```
+
+#### Install RPM
+```
+sudo dnf install /home/user/goeap_proxy-0.2.0-1.fc33.x86_64.rpm
+```
+
+#### Install systmed unit file
+Replace the interfaces defined in goeap_proxy.service to reflect your setup.
+```
+cp goeap_proxy.service /etc/systemd/system/goeap_proxy.service
+systemctl daemon-reload
+systemctl start goeap_proxy
+```
 
 ## Other Projects
 - [jaysoffian/eap_proxy](https://github.com/jaysoffian/eap_proxy): python implementation with a primary focus on EdgeOS
