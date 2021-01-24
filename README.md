@@ -58,15 +58,15 @@ Package building instructions in README
 ### For Fedora/RHEL/CentOS
 #### Build RPM
 ```
-git archive --format=tar --prefix=goeap_proxy-0.2.0/ -o goeap_proxy-0.2.0.tar HEAD
-gzip goeap_proxy-0.2.0.tar
-mv geap_proxy-0.2.0.tar.gz ~/rpmbuild/SOURCES
+git archive --format=tar --prefix=goeap_proxy-0.2.1/ -o goeap_proxy-0.2.1.tar HEAD
+gzip goeap_proxy-0.2.1.tar
+mv goeap_proxy-0.2.1.tar.gz ~/rpmbuild/SOURCES
 rpmbuild -ba goeap_proxy.spec
 ```
 
 #### Install RPM
 ```
-sudo dnf install /home/user/goeap_proxy-0.2.0-1.fc33.x86_64.rpm
+sudo dnf install /home/user/goeap_proxy-0.2.1-1.fc33.x86_64.rpm
 ```
 
 #### Install systmed unit file

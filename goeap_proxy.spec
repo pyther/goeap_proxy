@@ -3,7 +3,7 @@
 
 # https://github.com/pyther/goeap_proxy
 %global goipath         github.com/pyther/goeap_proxy
-Version:                0.2.0
+Version:                0.2.1
 
 %gometa
 
@@ -16,7 +16,7 @@ Name:           goeap_proxy
 Release:        1%{?dist}
 Summary:        EAP Proxy written in Go
 
-License:        # FIXME
+License:        MIT
 
 URL:            %{gourl}
 Source0:        %{gosource}
