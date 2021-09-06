@@ -5,7 +5,7 @@ BINARY=goeap_proxy
 # git tag 1.0.1
 # git commit -am "One more change after the tags"
 VERSION=`git describe --tags --dirty --always`
-BUILD=`date +%FT%T%z`
+BUILD=`date --utc +%FT%T%z`
 
 # Setup the -ldflags option for go build here, interpolate the variable values
 LDFLAGS=-ldflags "-X main.Version=${VERSION} -X main.BuildStamp=${BUILD}"

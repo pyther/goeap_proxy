@@ -13,16 +13,14 @@ Inspired by [`eap_proxy`](https://github.com/jaysoffian/eap_proxy/), which in tu
 
 ## Usage
 ```
-root@OpenWrt:~# goeap_proxy --help
-Usage of goeap_proxy:
-  -if-router string
-    	interface of the AT&T ONT/WAN
-  -if-wan string
-    	interface of the AT&T Router
+$ goeap_proxy --help
+Usage of goeap_proxy: [options] interface interface
   -ignore-logoff
-        ignore EAP-Logoff packets
+    	ignore EAPOL-Logoff packets
   -promiscuous
     	place interfaces into promiscuous mode instead of multicast
+  -version
+    	display version
 ```
 
 ### Ignore Logoff
@@ -30,7 +28,7 @@ It has been reported that some gateways such as the Pace 5268ac will send a EAPO
 
 ### Example Run
 ```
-root@OpenWrt:~# goeap_proxy -if-router eth3 -if-wan eth2
+root@OpenWrt:~# goeap_proxy eth3 eth2
 2020/05/02 19:45:18 eth3: 88:71:b1:a1:b1:c1 > 01:80:c2:00:00:03, EAPOLLogOff v2, len 0 > eth2
 2020/05/02 19:45:18 eth3: 88:71:b1:a1:b1:c1 > 01:80:c2:00:00:03, EAPOLStart v2, len 0 > eth2
 2020/05/02 19:45:18 eth2: 00:90:d0:63:ff:01 > 01:80:c2:00:00:03, EAP v1, len 4, Failure (4) id 115 > eth3

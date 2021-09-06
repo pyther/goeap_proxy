@@ -50,30 +50,35 @@ func newInterface(name string, promiscuous bool) *eapInterface {
 
 func main() {
 
-	var rtrInt string
-	var wanInt string
 	var promiscuous bool
 	var ignoreLogoff bool
 	var version bool
 
-	flag.StringVar(&rtrInt, "if-router", "", "interface of the AT&T Router")
-	flag.StringVar(&wanInt, "if-wan", "", "interface of the AT&T ONT/WAN")
+    flag.Usage = func() {
+        w := flag.CommandLine.Output() // may be os.Stderr - but not necessarily
+        fmt.Fprintf(w, "Usage of %s: [options] IFNAME1 IFNAME2\n", os.Args[0])
+        flag.PrintDefaults()
+    }
+
 	flag.BoolVar(&ignoreLogoff, "ignore-logoff", false, "ignore EAPOL-Logoff packets")
 	flag.BoolVar(&promiscuous, "promiscuous", false, "place interfaces into promiscuous mode instead of multicast")
-	flag.BoolVar(&version, "version", false, "display version")
+    flag.BoolVar(&version, "version", false, "display version")
 	flag.Parse()
 
-	if version {
-		fmt.Println("Version: ", Version)
-		fmt.Println("Build Time: ", BuildStamp)
-		os.Exit(0)
+
+    if version {
+	    fmt.Println("Version: ", Version)
+	    fmt.Println("Build Time: ", BuildStamp)
+	    os.Exit(0)
 	}
 
-	if rtrInt == "" || wanInt == "" {
-		flag.PrintDefaults()
-		os.Exit(1)
-	}
-	flag.Parse()
+    ifname1 := flag.Arg(0)
+    ifname2 := flag.Arg(1)
+
+    if ifname1 == "" || ifname2 == "" {
+        flag.Usage()
+        os.Exit(1)
+    }
 
 	// Allow only single instance of goeap_proxy
 	// We could potentially tie the lock file to the wan and rtr interfaces
@@ -85,14 +90,14 @@ func main() {
 	}
 	defer l.Close()
 
-	wan := newInterface(wanInt, promiscuous)
-	rtr := newInterface(rtrInt, promiscuous)
+	interface1 := newInterface(ifname1, promiscuous)
+	interface2 := newInterface(ifname2, promiscuous)
 
 	// Wait until both subroutines exit
-	fmt.Printf("proxy started. router: %s, wan: %s\n", rtrInt, wanInt)
+	fmt.Printf("proxy started: %s <-> %s\n", ifname1, ifname2)
 	quit := make(chan int)
-	go proxyPackets(rtr, wan, ignoreLogoff)
-	go proxyPackets(wan, rtr, ignoreLogoff)
+	go proxyPackets(interface1, interface2, ignoreLogoff)
+	go proxyPackets(interface2, interface1, ignoreLogoff)
 	<-quit
 }
 

@@ -1,13 +1,13 @@
 [Unit]
 Description=EAP Proxy written in Golang
 Before=network-pre.target
-After=sys-subsystem-net-devices-eth2.device sys-subsystem-net-devices-eth3.device
-BindTo=sys-subsystem-net-devices-eth2.device sys-subsystem-net-devices-eth3.device
 Wants=network-pre.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/goeap_proxy -if-router eth3 -if-wan eth2
+#Environment="IFNAME1=eth3"
+#Environment="IFNAME2=eth4"
+ExecStart=/usr/bin/goeap_proxy $IFNAME1 $IFNAME2
 Restart=always
 
 [Install]

@@ -3,7 +3,7 @@
 
 # https://github.com/pyther/goeap_proxy
 %global goipath         github.com/pyther/goeap_proxy
-Version:                0.2.1
+Version:                0.3.0
 
 %gometa
 
@@ -20,6 +20,8 @@ License:        MIT
 
 URL:            %{gourl}
 Source0:        %{gosource}
+BuildRequires: systemd
+BuildRequires: systemd-rpm-macros
 
 %description
 %{common_description}
@@ -36,8 +38,10 @@ LDFLAGS="-X main.Version=%{version} -X main.BuildStamp=${BUILD} $LDFLAGS"
 
 %install
 %gopkginstall
-install -m 0755 -vd                     %{buildroot}%{_bindir}
-install -m 0755 -vp %{gobuilddir}/bin/* %{buildroot}%{_bindir}/
+install -m 0755 -vd %{buildroot}%{_bindir}
+install -m 0755 -vd %{buildroot}%{_unitdir}
+install -m 0755 -vp %{gobuilddir}/bin/goeap_proxy %{buildroot}%{_bindir}/
+install -m 0644 -vp goeap_proxy.service %{buildroot}%{_unitdir}/
 
 %if %{with check}
 %check
@@ -46,9 +50,19 @@ install -m 0755 -vp %{gobuilddir}/bin/* %{buildroot}%{_bindir}/
 
 %files
 %doc README.md
-%{_bindir}/*
+%{_bindir}/goeap_proxy
+%{_unitdir}/goeap_proxy.service
 
 %gopkgfiles
+
+%post
+%systemd_post goeap_proxy.service
+
+%preun
+%systemd_preun goeap_proxy.service
+
+%postun
+%systemd_postun_with_restart goeap_proxy.service
 
 %changelog
 * Sun Jan 24 07:26:18 PST 2021 Matthew Gyurgyik <matthew@gyurgyik.io> - 0.2.0-1
