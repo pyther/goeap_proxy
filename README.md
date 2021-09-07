@@ -14,7 +14,7 @@ Inspired by [`eap_proxy`](https://github.com/jaysoffian/eap_proxy/), which in tu
 ## Usage
 ```
 $ goeap_proxy --help
-Usage of goeap_proxy: [options] interface interface
+Usage of ./goeap_proxy: [options] IFNAME1 IFNAME2
   -ignore-logoff
     	ignore EAPOL-Logoff packets
   -promiscuous
@@ -56,15 +56,15 @@ Package building instructions in README
 ### For Fedora/RHEL/CentOS
 #### Build RPM
 ```
-git archive --format=tar --prefix=goeap_proxy-0.2.1/ -o goeap_proxy-0.2.1.tar HEAD
-gzip goeap_proxy-0.2.1.tar
-mv goeap_proxy-0.2.1.tar.gz ~/rpmbuild/SOURCES
+git archive --format=tar --prefix=goeap_proxy-0.3.0/ -o goeap_proxy-0.3.0.tar HEAD
+gzip goeap_proxy-0.3.0.tar
+mv goeap_proxy-0.3.0.tar.gz ~/rpmbuild/SOURCES
 rpmbuild -ba goeap_proxy.spec
 ```
 
 #### Install RPM
 ```
-sudo dnf install /home/user/goeap_proxy-0.2.1-1.fc33.x86_64.rpm
+sudo dnf install /home/user/goeap_proxy-0.3.0-1.fc33.x86_64.rpm
 ```
 
 #### Install systmed unit file
